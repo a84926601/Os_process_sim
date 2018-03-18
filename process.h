@@ -1,8 +1,10 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 #endif // PROCESS_H
-#include <string>
+
 using namespace std;
+
+enum ProcessStatus{ready,waiting,running,stop};
 
 class process{
 public:

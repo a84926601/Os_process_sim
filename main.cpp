@@ -3,10 +3,10 @@
 #include <string>
 #include <queue>
 #include <fstream>
-#include <process.h>
+
+#include "process.h"
 
 using namespace std;
-enum ProcessStatus{ready,waiting,running,stop};
 
 int cpuLimit=0,programCount=0;
 queue<process> programList;

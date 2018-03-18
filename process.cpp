@@ -1,7 +1,9 @@
-#include <process.h>
 #include <string>
+
+#include "process.h"
+
 using namespace std;
-enum ProcessStatus{ready,waiting,running,stop};
+
 process::process(){
     processName="null";
     processStatus=stop;
