@@ -15,3 +15,9 @@ process::process(string name,int status,int work){
 string process::getName(){
     return processName;
 }
+int process::getStatus(){
+    return processStatus;
+}
+int process::getWork(){
+    return remainingWork;
+}
