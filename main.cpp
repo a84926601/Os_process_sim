@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     //cout<<"Input your programs info(name workclock):\n";
     //Push program to ram
     while(getline(programsData, line)){
-        iss.str(line);
+        istringstream iss(line);
         iss>>tmpname>>tempwork;
         programList.push(process(tmpname,ready,tempwork));
         programCount++;
