@@ -9,13 +9,15 @@ enum ProcessStatus{ready,waiting,running,stop};
 class process{
 public:
     process();
-    process(string,int,int);
+    process(string,int);
+    bool didRemainWork();
     void setStatus(int);
     void execute();
     string getName();
     int getStatus();
     int getWork();
+    int getUsedClock();
 private:
     string processName;
-    int processStatus,remainingWork;
+    int processStatus,remainingWork,usedClock;
 };

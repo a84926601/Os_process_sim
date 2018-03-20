@@ -11,6 +11,7 @@ using namespace std;
 int cpuLimit=0,programCount=0;
 queue<process> programList;
 bool showProcessStatus();
+bool popUntilNonStop();
 
 int main(int argc, char *argv[])
 {
@@ -26,22 +27,49 @@ int main(int argc, char *argv[])
     while(getline(programsData, line)){
         istringstream iss(line);
         iss>>tmpname>>tempwork;
-        programList.push(process(tmpname,ready,tempwork));
+        programList.push(process(tmpname,tempwork));
         programCount++;
-        cout<<programCount<<endl;
     }
 
     //Starting execute
-    while(!showProcessStatus()){
-
-
+    programList.front().setStatus(running);
+    while(!showProcessStatus()){    //CPU clock
+        popUntilNonStop();
+        if(!programList.front().didRemainWork()){ //end work
+            programList.front().execute();
+            programList.front().setStatus(stop);
+            programList.push(programList.front());
+            programList.pop();
+            if(popUntilNonStop()){
+                programList.front().setStatus(running);
+            }
+        }
+        //reach cpu limit
+        else if(programList.front().getUsedClock()>=cpuLimit-1){
+            programList.front().execute();
+            programList.front().setStatus(ready);
+            programList.push(programList.front());
+            programList.pop();
+            popUntilNonStop();
+            programList.front().setStatus(running);
+        }else programList.front().execute();
+        getchar();
     }
 
     return 0;
 }
-
+bool popUntilNonStop(){
+    int i=0;
+    while(programList.front().getStatus()==stop){   //clean stop work
+        programList.push(programList.front());
+        programList.pop();
+        i++;
+        if(i>=programCount)return false;
+    }
+    return true;
+}
 bool showProcessStatus(){
-    string sReady="ready:",sWating="wating:",sRunning="running",sStop="exit:";
+    string sReady="ready:",sWating="wating:",sRunning="running:",sStop="exit:";
     bool allStop=true;
     for (int i=0;i<programCount;i++) {
         stringstream sstring;
@@ -67,5 +95,5 @@ bool showProcessStatus(){
         programList.pop();
     }
     cout<<sReady<<endl<<sWating<<endl<<sRunning<<endl<<sStop<<endl;
-    return true;
+    return allStop;
 }
