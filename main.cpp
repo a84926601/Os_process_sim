@@ -1,3 +1,5 @@
+#include <unistd.h>
+#include <termios.h>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -10,19 +12,22 @@ using namespace std;
 
 int cpuLimit=0,programCount=0;
 queue<process> programList;
+process *pp=NULL;
+string sWating="wating:";
 bool showProcessStatus();
 bool popUntilNonStop();
+char getch();
 
 int main(int argc, char *argv[])
 {
-    string tmpname,line;
+    string tmpname,line,filePath;
     int tempwork;
-    ifstream programsData("/home/payne/Os_process_sim/input.txt", ios_base::in);
-    //cout<<"Input your cpu process clock limit:";
+    cout<<"Input your file path:";  //home/payne/Os_process_sim/input.txt
+    cin>>filePath;
+    ifstream programsData(filePath, ios_base::in);
     getline(programsData, line);
     istringstream iss(line);
     iss>>tmpname>>cpuLimit;
-    //cout<<"Input your programs info(name workclock):\n";
     //Push program to ram
     while(getline(programsData, line)){
         istringstream iss(line);
@@ -33,9 +38,29 @@ int main(int argc, char *argv[])
 
     //Starting execute
     programList.front().setStatus(running);
+
     while(!showProcessStatus()){    //CPU clock
         popUntilNonStop();
-        if(!programList.front().didRemainWork()){ //end work
+        if(getch()!='\n'){
+            if(pp==NULL){
+                cout<<"-----I/O-----"<<endl;
+                pp=&(programList.front());
+                programList.pop();
+                programCount--;
+                sWating+=(string(pp->getName())+"("+to_string(pp->getWork())+")");
+                pp->setStatus(waiting);
+            }
+            else{
+                cout<<"-----I/O complete-----"<<endl;
+                sWating="wating:";
+                pp->setStatus(ready);
+                programList.push(*pp);
+                programCount++;
+                pp=NULL;
+                programList.front().setStatus(running);
+            }
+        }
+        else if(!programList.front().didRemainWork()){ //end work
             programList.front().execute();
             programList.front().setStatus(stop);
             programList.push(programList.front());
@@ -53,7 +78,6 @@ int main(int argc, char *argv[])
             popUntilNonStop();
             programList.front().setStatus(running);
         }else programList.front().execute();
-        getchar();
     }
 
     return 0;
@@ -69,7 +93,7 @@ bool popUntilNonStop(){
     return true;
 }
 bool showProcessStatus(){
-    string sReady="ready:",sWating="wating:",sRunning="running:",sStop="exit:";
+    string sReady="ready:",sRunning="running:",sStop="exit:";
     bool allStop=true;
     for (int i=0;i<programCount;i++) {
         stringstream sstring;
@@ -79,10 +103,10 @@ bool showProcessStatus(){
                 sReady+=sstring.str();
                 allStop=false;
                 break;
-            case waiting:
+            /*case waiting:
                 sWating+=sstring.str();
                 allStop=false;
-                break;
+                break;*/
             case running:
                 sRunning+=sstring.str();
                 allStop=false;
@@ -97,3 +121,24 @@ bool showProcessStatus(){
     cout<<sReady<<endl<<sWating<<endl<<sRunning<<endl<<sStop<<endl;
     return allStop;
 }
+char getch(){
+    char buf=0;
+    struct termios old={0};
+    fflush(stdout);
+    if(tcgetattr(0, &old)<0)
+        perror("tcsetattr()");
+    old.c_lflag&=~ICANON;
+    old.c_lflag&=~ECHO;
+    old.c_cc[VMIN]=1;
+    old.c_cc[VTIME]=0;
+    if(tcsetattr(0, TCSANOW, &old)<0)
+        perror("tcsetattr ICANON");
+    if(read(0,&buf,1)<0)
+        perror("read()");
+    old.c_lflag|=ICANON;
+    old.c_lflag|=ECHO;
+    if(tcsetattr(0, TCSADRAIN, &old)<0)
+        perror ("tcsetattr ~ICANON");
+    //printf("%c\n",buf);
+    return buf;
+ }
