@@ -68,7 +68,8 @@ int main(int argc, char *argv[])
 
     while(!showProcessStatus()){    //CPU clock
         popUntilNonStop();
-        if(getch()!='\n'){
+        char gch=getch();
+        if(gch!='\r'&&gch!='\n'){	//Windows<-/->Linux
             if(pp==NULL){
                 cout<<"-----I/O-----"<<endl;
                 pp=&(programList.front());
