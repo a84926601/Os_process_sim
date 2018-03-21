@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <queue>
+#include <vector>
 #include <fstream>
 
 #include "process.h"
@@ -17,6 +18,7 @@ using namespace std;
 
 int cpuLimit=0,programCount=0;
 queue<process> programList;
+vector<process> stopList;
 process *pp=NULL;
 string sWating="wating:";
 bool showProcessStatus();
@@ -67,7 +69,6 @@ int main(int argc, char *argv[])
     programList.front().setStatus(running);
 
     while(!showProcessStatus()){    //CPU clock
-        popUntilNonStop();
         char gch=getch();
         if(gch!='\r'&&gch!='\n'){	//Windows<-/->Linux
             if(pp==NULL){
@@ -91,11 +92,10 @@ int main(int argc, char *argv[])
         else if(!programList.front().didRemainWork()){ //end work
             programList.front().execute();
             programList.front().setStatus(stop);
-            programList.push(programList.front());
+            stopList.push_back(programList.front());
             programList.pop();
-            if(popUntilNonStop()){
-                programList.front().setStatus(running);
-            }
+            programCount--;
+            programList.front().setStatus(running);
         }
         //reach cpu limit
         else if(programList.front().getUsedClock()>=cpuLimit-1){
@@ -103,22 +103,11 @@ int main(int argc, char *argv[])
             programList.front().setStatus(ready);
             programList.push(programList.front());
             programList.pop();
-            popUntilNonStop();
             programList.front().setStatus(running);
         }else programList.front().execute();
     }
 
     return 0;
-}
-bool popUntilNonStop(){
-    int i=0;
-    while(programList.front().getStatus()==stop){   //clean stop work
-        programList.push(programList.front());
-        programList.pop();
-        i++;
-        if(i>=programCount)return false;
-    }
-    return true;
 }
 bool showProcessStatus(){
     string sReady="ready:",sRunning="running:",sStop="exit:";
@@ -131,20 +120,18 @@ bool showProcessStatus(){
                 sReady+=sstring.str();
                 allStop=false;
                 break;
-            /*case waiting:
-                sWating+=sstring.str();
-                allStop=false;
-                break;*/
             case running:
                 sRunning+=sstring.str();
                 allStop=false;
                 break;
-            case stop:
-                sStop+=sstring.str();
-                break;
         }
         programList.push(programList.front());  //keep process data
         programList.pop();
+    }
+    for(vector<process>::iterator it = stopList.begin(); it != stopList.end(); it++) {
+        stringstream sstring;
+        sstring<<it->getName()<<"("<<it->getWork()<<") ";
+        sStop+=sstring.str();
     }
     cout<<sReady<<endl<<sWating<<endl<<sRunning<<endl<<sStop<<endl;
     return allStop;
